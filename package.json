@@ -1,0 +1,24 @@
+{
+  "name": "allex_maplowlevellib",
+  "version": "1.0.0",
+  "description": "Iterable JavaScript map",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/allex-lowlevel-libs/map.git"
+  },
+  "keywords": [
+    "ecosystem:AllexJS",
+    "map",
+    "iterable"
+  ],
+  "author": "Andrija Petrovic <andrija.hers@gmail.com>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/allex-lowlevel-libs/map/issues"
+  },
+  "homepage": "https://github.com/allex-lowlevel-libs/map#readme"
+}
