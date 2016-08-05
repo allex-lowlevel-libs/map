@@ -18,6 +18,7 @@ function createMap (avltreelib, inherit) {
   function MapNode(name,content){
     Node.call(this,{name:name,content:content});
   }
+  //TODO inherit?
   MapNode.prototype = Object.create(Node.prototype,{constructor:{
     value: MapNode,
     enumerable: false,
@@ -93,10 +94,14 @@ function createMap (avltreelib, inherit) {
     }
   };
   Map.prototype.page = function(cb,start,length){
+    var pageobj;
+    if ('function' !== typeof cb){
+      throw new Error('First parameter \'cb\' is not a function');
+    }
     if(length<1){
       return;
     }
-    var pageobj = {start:start,length:length,count:0};
+    pageobj = {start:start,length:length,count:0};
     this.traverseConditionally(pager.bind(null,pageobj,cb));
   };
   function keyPusher(arry,item,itemname){
@@ -109,15 +114,18 @@ function createMap (avltreelib, inherit) {
   };
 
   function applier(func, map, name) {
+    var item;
     if (!map.controller) {
       return;
     }
-    var item = map.get(name);
+    item = map.get(name);
     if ('undefined' !== typeof item) { // && null !== item) {
       func(item, name, map);
     }
   };
 
+  //is this kind of traverse really neccessery?
+  //traversing tree 2 times
   Map.prototype.traverse = function(func) {
     this.keys().forEach(applier.bind(null, func, this));
   };
@@ -129,12 +137,12 @@ function createMap (avltreelib, inherit) {
       if(valname){
         obj[valname] = item.get(valname);
       }else{
-        throw "Don't know what to do with Map in arrayizer";
+        throw new Error("Don't know what to do with Map in arrayizer");
       }
     }else if(valname){
       obj[valname] = item;
     }else{
-      throw "Don't know what to do with non-Map in arrayizer";
+      throw new Error("Don't know what to do with non-Map in arrayizer");
     }
     array.push(obj);
   }
