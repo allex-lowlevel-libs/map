@@ -103,13 +103,16 @@ function createMap (avltreelib, inherit) {
     }
     pageobj = {start:start,length:length,count:0};
     this.traverseConditionally(pager.bind(null,pageobj,cb));
+    pageobj = null;
+    cb = null;
   };
   function keyPusher(arry,item,itemname){
     arry.push(itemname);
   }
   Map.prototype.keys = function(){
-    var ret = [];
-    Tree.prototype.traverse.call(this, keyPusher.bind(null,ret));
+    var ret = [], _ret=ret;;
+    Tree.prototype.traverse.call(this, keyPusher.bind(null,_ret));
+    _ret = null;
     return ret;
   };
 
@@ -128,6 +131,7 @@ function createMap (avltreelib, inherit) {
   //traversing tree 2 times
   Map.prototype.traverse = function(func) {
     this.keys().forEach(applier.bind(null, func, this));
+    func = null;
   };
 
   function arrayizer(array,keyname,valname,item,itemname){
@@ -148,8 +152,11 @@ function createMap (avltreelib, inherit) {
   }
 
   Map.prototype.asACollectionSerializeToArray = function(keyname,valname){
-    var ret = [];
-    this.traverse(arrayizer.bind(null,ret,keyname,valname));
+    var ret = [], _ret = ret;
+    this.traverse(arrayizer.bind(null,_ret,keyname,valname));
+    _ret = null;
+    keyname = null;
+    valname = null;
     return ret;
   };
 
