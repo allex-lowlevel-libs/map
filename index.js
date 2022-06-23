@@ -37,6 +37,9 @@ function createMap (avltreelib, inherit) {
   MapNode.prototype.apply = function(func,depth){
     //return this.content ? func(this.content.content,this,depth,this.content.name) : false;
     //return func(this.content.content,this,depth,this.content.name);
+    if (!this.content) {
+      return;
+    }
     return func(this.content.content,this.content.name,this,depth);
   };
   MapNode.prototype.contentToString = function(){
@@ -49,8 +52,13 @@ function createMap (avltreelib, inherit) {
 
   function Map(){
     Tree.call(this);
+    this.keyType = null;
   }
   inherit(Map,Tree);
+  Map.prototype.destroy = function () {
+    this.keyType = null;
+    Tree.prototype.destroy.call(this);
+  };
   function nameGetter(content,name){
     return name;
   }
@@ -60,6 +68,30 @@ function createMap (avltreelib, inherit) {
       this.remove(name);
     }
   };
+  //static
+  function checkType (name) {
+    var estl;
+    if (!this.keyType) {
+      this.keyType = typeof(name);
+      return;
+    }
+    if (this.keyType != typeof(name)) {
+      console.log('Fatal error in adding to map');
+      console.log('Map already has keyType', this.keyType);
+      console.log('These are the keys', this.keys());
+      console.log('BUT, the key to be added', name, 'has type', typeof(name));
+      estl = Error.stackTraceLimit;
+      Error.stackTraceLimit = Infinity;
+      console.trace();
+      Error.stackTraceLimit = estl;
+      process.exit(1);
+    }
+  }
+  Map.prototype.add = function (name, content) {
+    var keytype = typeof(name);
+    checkType.call(this, name);
+    return Tree.prototype.add.call(this, name, content);
+  }
   Map.prototype.reverseAdd = function(content,name){
     return this.add(name,content);
   };
@@ -74,7 +106,11 @@ function createMap (avltreelib, inherit) {
     return ret;
   };
   Map.prototype.remove = function(name){
-    return Tree.prototype.remove.call(this,{name:name});
+    var ret = Tree.prototype.remove.call(this,{name:name});
+    if (this.count < 1) {
+      this.keyType = null;
+    }
+    return ret;
   };
   Map.prototype.get = function(name){
     var item = this.find({name:name});
@@ -116,22 +152,20 @@ function createMap (avltreelib, inherit) {
     return ret;
   };
 
-  function applier(func, map, name) {
-    var item;
-    if (!map.controller) {
-      return;
-    }
-    item = map.get(name);
-    if ('undefined' !== typeof item) { // && null !== item) {
-      func(item, name, map);
-    }
-  };
+  //static
+  function applier (func, item, name) {
+    func(item, name, this);
+  }
 
-  //is this kind of traverse really neccessery?
-  //traversing tree 2 times
-  Map.prototype.traverse = function(func) {
-    this.keys().forEach(applier.bind(null, func, this));
+  Map.prototype.traverse = function (func) {
+    var ret = Tree.prototype.traverse.call(this, applier.bind(this, func));
     func = null;
+    return ret;
+  };
+  Map.prototype.traverseSafe = function (func, errorcaption) {
+    var ret = Tree.prototype.traverse.call(this, applier.bind(this, func), errorcaption||'Error in Map.traverseSafe');
+    func = null;
+    return ret;
   };
 
   function arrayizer(array,keyname,valname,item,itemname){
