@@ -12,23 +12,19 @@ function mapNodeCompare(a,b){
   return plainCompare(a.name,b.name);
 }
 
-function createMap (avltreelib, inherit) {
+function createMap (avltreelib, inherit, List) {
   'use strict';
   var Node = avltreelib.Node, Tree;
   function MapNode(name,content){
     Node.call(this,{name:name,content:content});
   }
   //TODO inherit?
-  MapNode.prototype = Object.create(Node.prototype,{constructor:{
-    value: MapNode,
-    enumerable: false,
-    configurable: false,
-    writable: false
-  }});
+  inherit(MapNode, Node);
   MapNode.prototype.destroy = function(){
-    if (!this.content) return;
-    this.content.name = null;
-    this.content.content = null;
+    if (this.content) {
+      this.content.name = null;
+      this.content.content = null;
+    }
     Node.prototype.destroy.call(this);
   };
   MapNode.prototype.returnOnRemove = function(){
@@ -40,7 +36,7 @@ function createMap (avltreelib, inherit) {
     if (!this.content) {
       return;
     }
-    return func(this.content.content,this.content.name,this,depth);
+    return func(this,depth);
   };
   MapNode.prototype.contentToString = function(){
     return this.content.name+' => '+'something';//require('util').inspect(this.content.content,{depth:null});
@@ -51,22 +47,28 @@ function createMap (avltreelib, inherit) {
   });
 
   function Map(){
-    Tree.call(this);
+    this.tree = new Tree();
+    this.count = 0;
     this.keyType = null;
   }
-  inherit(Map,Tree);
   Map.prototype.destroy = function () {
     this.keyType = null;
-    Tree.prototype.destroy.call(this);
+    this.count = null;
+    if (this.tree) {
+      this.tree.destroy();
+    }
+    this.tree = null;
   };
   function nameGetter(content,name){
     return name;
   }
   Map.prototype.purge = function () {
-    var name;
-    while(name = this.traverseConditionally(nameGetter)){
-      this.remove(name);
+    if (!this.tree) {
+      return;
     }
+    this.tree.purge();
+    this.keytype = null;
+    this.count = 0;
   };
   //static
   function checkType (name) {
@@ -88,32 +90,34 @@ function createMap (avltreelib, inherit) {
     }
   }
   Map.prototype.add = function (name, content) {
-    var keytype = typeof(name);
+    var keytype = typeof(name), ret;
     checkType.call(this, name);
-    return Tree.prototype.add.call(this, name, content);
-  }
+    ret = this.tree.add(name, content);
+    this.count = this.tree.count;
+    return ret;
+  };
   Map.prototype.reverseAdd = function(content,name){
     return this.add(name,content);
   };
   Map.prototype.replace = function(name,content){
-    var item = this.find({name:name}),ret;
+    var item = this.tree.find({name:name}),ret;
     if(item){
       ret = item.content.content;
       item.content.content = content;
-    }else{
-      this.add(name,content);
+      return ret;
     }
-    return ret;
+    this.add(name,content); //no return
   };
   Map.prototype.remove = function(name){
-    var ret = Tree.prototype.remove.call(this,{name:name});
+    var ret = this.tree.remove({name:name});
+    this.count = this.tree.count;
     if (this.count < 1) {
       this.keyType = null;
     }
     return ret;
   };
   Map.prototype.get = function(name){
-    var item = this.find({name:name});
+    var item = this.tree.find({name:name});
     if(item){
       return item.content.content;
     }
@@ -142,30 +146,86 @@ function createMap (avltreelib, inherit) {
     pageobj = null;
     cb = null;
   };
-  function keyPusher(arry,item,itemname){
-    arry.push(itemname);
+  function keyPusher(arry,node){
+    if (!(node && node.content)) {
+      return;
+    }
+    arry.push(node.content.name);
   }
   Map.prototype.keys = function(){
     var ret = [], _ret=ret;;
-    Tree.prototype.traverse.call(this, keyPusher.bind(null,_ret));
+    this.tree.traverseInOrder(keyPusher.bind(null,_ret));
     _ret = null;
     return ret;
   };
 
   //static
-  function applier (func, item, name) {
-    func(item, name, this);
+  function applier (func, errorcaption, node) {
+    if (!(node && node.content)) {
+      return;
+    }
+    if (!errorcaption) {
+      func(node.content.content, node.content.name, this);
+      return;
+    }
+    try {
+      func(node.content.content, node.content.name, this);
+    } catch (e) {
+      console.log(errorcaption+' :', e);
+    }
+  }
+
+  function listAppender (list, node) {
+    list.add(node);
+  }
+
+  //static
+  function toList () {
+    var list = new List(), _l = list;
+    this.tree.traverseInOrder(listAppender.bind(null, _l));
+    _l;
+    return list;
+  }
+  //static
+  function applyToCurrentNodes (func) {
+    var list = toList.call(this);
+    list.traverse(func);
+    list.destroy();
+  }
+
+  function applierForConditional (func, node) {
+    if (!(node && node.content)) {
+      return;
+    }
+    try {
+      return func(node.content.content, node.content.name, this);
+    } catch (e) {
+      console.error('Error in Map.traverseConditionally :', e);
+    }
+  }
+  //static
+  function conditionalApplyToCurrentNodes (func) {
+    var list = toList.call(this), ret;
+    ret = list.traverseConditionally(applierForConditional.bind(this, func));
+    func = null;
+    list.destroy();
+    return ret;
   }
 
   Map.prototype.traverse = function (func) {
-    var ret = Tree.prototype.traverse.call(this, applier.bind(this, func));
-    func = null;
-    return ret;
+    if (!this.tree) {
+      return;
+    }
+    return applyToCurrentNodes.call(this, applier.bind(this, func, null));
   };
   Map.prototype.traverseSafe = function (func, errorcaption) {
-    var ret = Tree.prototype.traverse.call(this, applier.bind(this, func), errorcaption||'Error in Map.traverseSafe');
-    func = null;
-    return ret;
+    if (!this.tree) {
+      return;
+    }
+    return applyToCurrentNodes.call(this, applier.bind(this, func, errorcaption || 'Error in Map.traverseSafe'));
+  };
+  Map.prototype.traverseConditionally = function (func) {
+    return conditionalApplyToCurrentNodes.call(this, func);
   };
 
   function arrayizer(array,keyname,valname,item,itemname){
