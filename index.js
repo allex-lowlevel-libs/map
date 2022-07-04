@@ -90,7 +90,11 @@ function createMap (avltreelib, inherit, List) {
     }
   }
   Map.prototype.add = function (name, content) {
-    var keytype = typeof(name), ret;
+    var keytype, ret;
+    if (!this.tree) {
+      return;
+    }
+    keytype = typeof(name);
     checkType.call(this, name);
     ret = this.tree.add(name, content);
     this.count = this.tree.count;
@@ -100,7 +104,11 @@ function createMap (avltreelib, inherit, List) {
     return this.add(name,content);
   };
   Map.prototype.replace = function(name,content){
-    var item = this.tree.find({name:name}),ret;
+    var item, ret;
+    if (!this.tree) {
+      return;
+    }
+    item = this.tree.find({name:name});
     if(item){
       ret = item.content.content;
       item.content.content = content;
@@ -109,7 +117,11 @@ function createMap (avltreelib, inherit, List) {
     this.add(name,content); //no return
   };
   Map.prototype.remove = function(name){
-    var ret = this.tree.remove({name:name});
+    var ret;
+    if (!this.tree) {
+      return;
+    }
+    ret = this.tree.remove({name:name});
     this.count = this.tree.count;
     if (this.count < 1) {
       this.keyType = null;
@@ -117,7 +129,11 @@ function createMap (avltreelib, inherit, List) {
     return ret;
   };
   Map.prototype.get = function(name){
-    var item = this.tree.find({name:name});
+    var item;
+    if (!this.tree) {
+      return;
+    }
+    item = this.tree.find({name:name});
     if(item){
       return item.content.content;
     }
@@ -153,7 +169,10 @@ function createMap (avltreelib, inherit, List) {
     arry.push(node.content.name);
   }
   Map.prototype.keys = function(){
-    var ret = [], _ret=ret;;
+    var ret = [], _ret=ret;
+    if (!this.tree) {
+      return ret;
+    }
     this.tree.traverseInOrder(keyPusher.bind(null,_ret));
     _ret = null;
     return ret;
@@ -182,6 +201,9 @@ function createMap (avltreelib, inherit, List) {
   //static
   function toList () {
     var list = new List(), _l = list;
+    if (!this.tree) {
+      return list;
+    }
     this.tree.traverseInOrder(listAppender.bind(null, _l));
     _l;
     return list;
