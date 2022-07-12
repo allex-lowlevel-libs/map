@@ -276,16 +276,16 @@ function createMap (avltreelib, inherit, List) {
     return ret;
   };
 
-  function consoleMap(name,content,item,level){
+  function consoleMap(node,level){
     var s = '';
     for(var i=0; i<level; i++){
       s += '\t';
     }
-    console.log(s+item.contentToString()+' ('+level+')');
+    console.log(s+node.contentToString()+' ('+level+')');
   }
 
   Map.prototype.dumpToConsole = function(){
-    Tree.prototype.dumpToConsole.call(this,consoleMap);
+    Tree.prototype.dumpToConsole.call(this.tree,consoleMap);
   };
 
   return Map;
