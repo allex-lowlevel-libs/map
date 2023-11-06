@@ -250,6 +250,17 @@ function createMap (avltreelib, inherit, List) {
     return conditionalApplyToCurrentNodes.call(this, func);
   };
 
+  function reducer (reduceobj, val, key) {
+    reduceobj.seed = reduceobj.func(reduceobj.seed, val, key);
+  }
+  Map.prototype.reduce = function (func, seed) {
+    var reduceobj = {func: func, seed: seed}, ret;
+    this.traverseSafe(reducer.bind(null, reduceobj));
+    ret = reduceobj.seed;
+    reduceobj = null;
+    return ret;
+  };
+
   function arrayizer(array,keyname,valname,item,itemname){
     var obj = {}, valismap = item instanceof Map;
     obj[keyname] = itemname;
