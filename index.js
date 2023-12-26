@@ -67,34 +67,33 @@ function createMap (avltreelib, inherit, List) {
       return;
     }
     this.tree.purge();
-    this.keytype = null;
+    this.keyType = null;
     this.count = 0;
   };
   //static
   function checkType (name) {
-    var estl;
+    var estl, ton;
+    ton = typeof(name);
     if (!this.keyType) {
-      this.keyType = typeof(name);
+      this.keyType = ton;
       return;
     }
-    if (this.keyType != typeof(name)) {
+    if (this.keyType != ton) {
       console.log('Fatal error in adding to map');
       console.log('Map already has keyType', this.keyType);
       console.log('These are the keys', this.keys());
-      console.log('BUT, the key to be added', name, 'has type', typeof(name));
+      console.log('BUT, the key to be added', name, 'has type', ton);
       estl = Error.stackTraceLimit;
       Error.stackTraceLimit = Infinity;
       console.trace();
       Error.stackTraceLimit = estl;
-      process.exit(1);
     }
   }
   Map.prototype.add = function (name, content) {
-    var keytype, ret;
+    var ret;
     if (!this.tree) {
       return;
     }
-    keytype = typeof(name);
     checkType.call(this, name);
     ret = this.tree.add(name, content);
     this.count = this.tree.count;

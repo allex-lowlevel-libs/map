@@ -1,6 +1,6 @@
 {
   "name": "allex_maplowlevellib",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Iterable JavaScript map",
   "main": "index.js",
   "scripts": {
